@@ -10,7 +10,7 @@ info:
     |------|--------------------------|----------------------|
     | フィールド命名 | camelCase | snake_case |
     | エラー表現 | code + message | detail (RFC 7807風) |
-    | 検索パラメータ | `q`, `maxResults`, `startIndex` | `keyword`, `per_page`, `page` |
+    | 検索パラメータ | `title`, `author`, `publisher`, `category` | `title`, `author_name` |
     | ページネーション | オフセット型 (startIndex) | ページ型 (page / per_page) |
     | 著者表現 | `authors: string[]` | `authors: Author[]` |
     | 出版日 | `publishedDate: string` (精度不定) | `published_year: integer` + `published_date?: string` |
@@ -75,17 +75,25 @@ paths:
       tags: [books]
       summary: 書籍を検索する
       description: |
-        キーワードで書籍を検索します。
+        タイトル・著者名で書籍を検索します。
         内部で Book Search API の `GET /v1/search` を呼び出し、レスポンスを変換して返します。
+        `title` と `author_name` のうち少なくとも1つを指定してください。
       operationId: searchBooks
       parameters:
-        - name: keyword
+        - name: title
           in: query
-          required: true
-          description: 検索キーワード（タイトル・著者名など）
+          required: false
+          description: タイトルの部分一致
           schema:
             type: string
-            example: "Python"
+            example: "Fluent Python"
+        - name: author_name
+          in: query
+          required: false
+          description: 著者名の部分一致（外部APIの `author` パラメータにマッピング）
+          schema:
+            type: string
+            example: "Ramalho"
         - name: per_page
           in: query
           required: false

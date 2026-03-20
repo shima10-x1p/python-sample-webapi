@@ -20,13 +20,34 @@ paths:
       summary: 書籍を検索する
       operationId: searchBooks
       parameters:
-        - name: q
+        - name: title
           in: query
-          required: true
-          description: 検索キーワード（タイトル・著者名など）
+          required: false
+          description: タイトルの部分一致
           schema:
             type: string
-            example: "Python"
+            example: "Fluent Python"
+        - name: author
+          in: query
+          required: false
+          description: 著者名の部分一致
+          schema:
+            type: string
+            example: "Ramalho"
+        - name: publisher
+          in: query
+          required: false
+          description: 出版社名の部分一致
+          schema:
+            type: string
+            example: "O'Reilly"
+        - name: category
+          in: query
+          required: false
+          description: カテゴリ名の完全一致
+          schema:
+            type: string
+            example: "Programming"
         - name: maxResults
           in: query
           required: false
@@ -44,6 +65,7 @@ paths:
             type: integer
             minimum: 0
             default: 0
+      description: title / author / publisher / category のうち少なくとも1つを指定すること。
       responses:
         "200":
           description: 検索成功
