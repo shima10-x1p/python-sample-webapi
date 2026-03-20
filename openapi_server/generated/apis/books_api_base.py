@@ -19,11 +19,12 @@ class BaseBooksApi:
         BaseBooksApi.subclasses = BaseBooksApi.subclasses + (cls,)
     async def search_books(
         self,
-        keyword: Annotated[StrictStr, Field(description="検索キーワード（タイトル・著者名など）")],
+        title: Annotated[Optional[StrictStr], Field(description="タイトルの部分一致")],
+        author_name: Annotated[Optional[StrictStr], Field(description="著者名の部分一致（外部APIの `author` パラメータにマッピング）")],
         per_page: Annotated[Optional[Annotated[int, Field(le=40, strict=True, ge=1)]], Field(description="1ページあたりの取得件数（1〜40）")],
         page: Annotated[Optional[Annotated[int, Field(strict=True, ge=1)]], Field(description="ページ番号（1始まり）")],
     ) -> BookListResponse:
-        """キーワードで書籍を検索します。 内部で Book Search API の &#x60;GET /v1/search&#x60; を呼び出し、レスポンスを変換して返します。 """
+        """タイトル・著者名で書籍を検索します。 内部で Book Search API の &#x60;GET /v1/search&#x60; を呼び出し、レスポンスを変換して返します。 &#x60;title&#x60; と &#x60;author_name&#x60; のうち少なくとも1つを指定してください。 """
         ...
 
 

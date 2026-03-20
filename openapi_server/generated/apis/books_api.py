@@ -51,14 +51,15 @@ for _, name, _ in pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + "."):
     response_model_by_alias=True,
 )
 async def search_books(
-    keyword: Annotated[StrictStr, Field(description="検索キーワード（タイトル・著者名など）")] = Query(None, description="検索キーワード（タイトル・著者名など）", alias="keyword"),
+    title: Annotated[Optional[StrictStr], Field(description="タイトルの部分一致")] = Query(None, description="タイトルの部分一致", alias="title"),
+    author_name: Annotated[Optional[StrictStr], Field(description="著者名の部分一致（外部APIの `author` パラメータにマッピング）")] = Query(None, description="著者名の部分一致（外部APIの &#x60;author&#x60; パラメータにマッピング）", alias="author_name"),
     per_page: Annotated[Optional[Annotated[int, Field(le=40, strict=True, ge=1)]], Field(description="1ページあたりの取得件数（1〜40）")] = Query(10, description="1ページあたりの取得件数（1〜40）", alias="per_page", ge=1, le=40),
     page: Annotated[Optional[Annotated[int, Field(strict=True, ge=1)]], Field(description="ページ番号（1始まり）")] = Query(1, description="ページ番号（1始まり）", alias="page", ge=1),
 ) -> BookListResponse:
-    """キーワードで書籍を検索します。 内部で Book Search API の &#x60;GET /v1/search&#x60; を呼び出し、レスポンスを変換して返します。 """
+    """タイトル・著者名で書籍を検索します。 内部で Book Search API の &#x60;GET /v1/search&#x60; を呼び出し、レスポンスを変換して返します。 &#x60;title&#x60; と &#x60;author_name&#x60; のうち少なくとも1つを指定してください。 """
     if not BaseBooksApi.subclasses:
         raise HTTPException(status_code=500, detail="Not implemented")
-    return await BaseBooksApi.subclasses[0]().search_books(keyword, per_page, page)
+    return await BaseBooksApi.subclasses[0]().search_books(title, author_name, per_page, page)
 
 
 @router.post(
