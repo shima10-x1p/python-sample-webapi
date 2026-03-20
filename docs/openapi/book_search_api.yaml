@@ -1,0 +1,230 @@
+openapi: "3.1.0"
+info:
+  title: Book Search API
+  version: "1.0.0"
+  description: |
+    書籍検索外部APIのモック。
+
+servers:
+  - url: http://localhost:8001
+    description: ローカル開発用モックサーバ
+
+tags:
+  - name: books
+    description: 書籍操作
+
+paths:
+  /v1/search:
+    get:
+      tags: [books]
+      summary: 書籍を検索する
+      operationId: searchBooks
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 検索キーワード（タイトル・著者名など）
+          schema:
+            type: string
+            example: "Python"
+        - name: maxResults
+          in: query
+          required: false
+          description: 最大取得件数（1〜40）
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 40
+            default: 10
+      responses:
+        "200":
+          description: 検索成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: リクエストパラメータが不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/books:
+    post:
+      tags: [books]
+      summary: 書籍を登録する
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+      responses:
+        "201":
+          description: 登録成功
+          headers:
+            Location:
+              description: 登録された書籍のURL
+              schema:
+                type: string
+                format: uri
+                example: "/v1/books/9784873119328"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetail"
+        "400":
+          description: リクエストボディが不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: 同じISBNの書籍がすでに存在する
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/books/{isbn}:
+    get:
+      tags: [books]
+      summary: ISBNで書籍詳細を取得する
+      operationId: getBookByIsbn
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          description: ISBN-13（ハイフンなし13桁）
+          schema:
+            type: string
+            pattern: '^\d{13}$'
+            example: "9784873119328"
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetail"
+        "404":
+          description: 書籍が見つからない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    BookSummary:
+      type: object
+      required: [isbn, title, authors, publishedDate]
+      properties:
+        isbn:
+          type: string
+          description: ISBN-13
+          example: "9784873119328"
+        title:
+          type: string
+          example: "Fluent Python"
+        authors:
+          type: array
+          items:
+            type: string
+          example: ["Luciano Ramalho"]
+        publishedDate:
+          type: string
+          description: 出版日（YYYY-MM-DD または YYYY）
+          example: "2022-04-26"
+        publisher:
+          type: string
+          example: "O'Reilly Media"
+
+    BookDetail:
+      allOf:
+        - $ref: "#/components/schemas/BookSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+              description: 書籍の説明文
+              example: "Pythonのデータモデルを深く理解し、より慣用的なコードを書くための実践的なガイド。"
+            pageCount:
+              type: integer
+              example: 1012
+            categories:
+              type: array
+              items:
+                type: string
+              example: ["Programming", "Python"]
+            thumbnailUrl:
+              type: string
+              format: uri
+              example: "https://example.com/books/9784873119328/thumbnail.jpg"
+
+    SearchResponse:
+      type: object
+      required: [totalItems, items]
+      properties:
+        totalItems:
+          type: integer
+          description: ヒット総件数
+          example: 42
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookSummary"
+
+    BookInput:
+      description: 書籍登録リクエスト
+      type: object
+      required: [isbn, title, authors, publishedDate]
+      properties:
+        isbn:
+          type: string
+          pattern: '^\d{13}$'
+          example: "9784873119328"
+        title:
+          type: string
+          example: "Fluent Python"
+        authors:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          example: ["Luciano Ramalho"]
+        publishedDate:
+          type: string
+          example: "2022-04-26"
+        publisher:
+          type: string
+          example: "O'Reilly Media"
+        description:
+          type: string
+          example: "Pythonのデータモデルを深く理解し、より慣用的なコードを書くための実践的なガイド。"
+        pageCount:
+          type: integer
+          minimum: 1
+          example: 1012
+        categories:
+          type: array
+          items:
+            type: string
+          example: ["Programming", "Python"]
+        thumbnailUrl:
+          type: string
+          format: uri
+          example: "https://example.com/books/9784873119328/thumbnail.jpg"
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "INVALID_PARAMETER"
+        message:
+          type: string
+          example: "Parameter 'q' is required."

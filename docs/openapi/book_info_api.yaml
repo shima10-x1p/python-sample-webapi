@@ -1,0 +1,277 @@
+openapi: "3.1.0"
+info:
+  title: Book Info API
+  version: "1.0.0"
+  description: |
+    書籍検索外部APIをラップする自前API。
+
+    ## 外部APIとの違い
+    | 項目 | 外部API (Book Search API) | 本API (Book Info API) |
+    |------|--------------------------|----------------------|
+    | フィールド命名 | camelCase | snake_case |
+    | エラー表現 | code + message | detail (RFC 7807風) |
+    | 検索パラメータ | `q`, `maxResults` | `keyword`, `limit` |
+    | 書籍説明フィールド | `description` | `summary` |
+
+servers:
+  - url: http://localhost:8000
+    description: ローカル開発用サーバ
+
+tags:
+  - name: books
+    description: 書籍操作
+
+paths:
+  /books:
+    post:
+      tags: [books]
+      summary: 書籍を登録する
+      description: |
+        書籍を新規登録します。
+        内部で Book Search API の `POST /v1/books` を呼び出し、レスポンスを変換して返します。
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+      responses:
+        "201":
+          description: 登録成功
+          headers:
+            Location:
+              description: 登録された書籍のURL
+              schema:
+                type: string
+                format: uri
+                example: "/books/9784873119328"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetail"
+        "400":
+          description: リクエストボディが不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: 同じISBNの書籍がすでに存在する
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "502":
+          description: 外部API呼び出しに失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+    get:
+      tags: [books]
+      summary: 書籍を検索する
+      description: |
+        キーワードで書籍を検索します。
+        内部で Book Search API の `GET /v1/search` を呼び出し、レスポンスを変換して返します。
+      operationId: searchBooks
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          description: 検索キーワード（タイトル・著者名など）
+          schema:
+            type: string
+            example: "Python"
+        - name: limit
+          in: query
+          required: false
+          description: 最大取得件数（1〜40）
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 40
+            default: 10
+      responses:
+        "200":
+          description: 検索成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListResponse"
+        "400":
+          description: リクエストパラメータが不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "502":
+          description: 外部API呼び出しに失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+  /books/{isbn}:
+    get:
+      tags: [books]
+      summary: ISBNで書籍詳細を取得する
+      description: |
+        ISBNを指定して書籍の詳細情報を取得します。
+        内部で Book Search API の `GET /v1/books/{isbn}` を呼び出し、レスポンスを変換して返します。
+      operationId: getBook
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          description: ISBN-13（ハイフンなし13桁）
+          schema:
+            type: string
+            pattern: '^\d{13}$'
+            example: "9784873119328"
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetail"
+        "400":
+          description: ISBNの形式が不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: 書籍が見つからない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "502":
+          description: 外部API呼び出しに失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+components:
+  schemas:
+    BookSummary:
+      type: object
+      required: [isbn, title, authors, published_date]
+      properties:
+        isbn:
+          type: string
+          description: ISBN-13
+          example: "9784873119328"
+        title:
+          type: string
+          example: "Fluent Python"
+        authors:
+          type: array
+          items:
+            type: string
+          example: ["Luciano Ramalho"]
+        published_date:
+          type: string
+          description: 出版日（YYYY-MM-DD または YYYY）
+          example: "2022-04-26"
+        publisher:
+          type: string
+          example: "O'Reilly Media"
+
+    BookDetail:
+      allOf:
+        - $ref: "#/components/schemas/BookSummary"
+        - type: object
+          properties:
+            summary:
+              type: string
+              description: 書籍の説明文（外部APIの `description` フィールドをマッピング）
+              example: "Pythonのデータモデルを深く理解し、より慣用的なコードを書くための実践的なガイド。"
+            page_count:
+              type: integer
+              example: 1012
+            categories:
+              type: array
+              items:
+                type: string
+              example: ["Programming", "Python"]
+            thumbnail_url:
+              type: string
+              format: uri
+              example: "https://example.com/books/9784873119328/thumbnail.jpg"
+
+    BookListResponse:
+      type: object
+      required: [total, books]
+      properties:
+        total:
+          type: integer
+          description: ヒット総件数
+          example: 42
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookSummary"
+
+    BookInput:
+      description: 書籍登録リクエスト
+      type: object
+      required: [isbn, title, authors, published_date]
+      properties:
+        isbn:
+          type: string
+          pattern: '^\d{13}$'
+          example: "9784873119328"
+        title:
+          type: string
+          example: "Fluent Python"
+        authors:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          example: ["Luciano Ramalho"]
+        published_date:
+          type: string
+          example: "2022-04-26"
+        publisher:
+          type: string
+          example: "O'Reilly Media"
+        summary:
+          type: string
+          description: 書籍の説明文（外部APIの `description` フィールドへマッピング）
+          example: "Pythonのデータモデルを深く理解し、より慣用的なコードを書くための実践的なガイド。"
+        page_count:
+          type: integer
+          minimum: 1
+          example: 1012
+        categories:
+          type: array
+          items:
+            type: string
+          example: ["Programming", "Python"]
+        thumbnail_url:
+          type: string
+          format: uri
+          example: "https://example.com/books/9784873119328/thumbnail.jpg"
+
+    ProblemDetail:
+      description: RFC 7807 風のエラーレスポンス
+      type: object
+      required: [status, detail]
+      properties:
+        status:
+          type: integer
+          description: HTTPステータスコード
+          example: 404
+        title:
+          type: string
+          description: エラーの短い説明
+          example: "Not Found"
+        detail:
+          type: string
+          description: エラーの詳細メッセージ
+          example: "ISBN '9784873119328' の書籍は見つかりませんでした。"
