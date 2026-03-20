@@ -10,7 +10,10 @@ info:
     |------|--------------------------|----------------------|
     | フィールド命名 | camelCase | snake_case |
     | エラー表現 | code + message | detail (RFC 7807風) |
-    | 検索パラメータ | `q`, `maxResults` | `keyword`, `limit` |
+    | 検索パラメータ | `q`, `maxResults`, `startIndex` | `keyword`, `per_page`, `page` |
+    | ページネーション | オフセット型 (startIndex) | ページ型 (page / per_page) |
+    | 著者表現 | `authors: string[]` | `authors: Author[]` |
+    | 出版日 | `publishedDate: string` (精度不定) | `published_year: integer` + `published_date?: string` |
     | 書籍説明フィールド | `description` | `summary` |
 
 servers:
@@ -83,15 +86,23 @@ paths:
           schema:
             type: string
             example: "Python"
-        - name: limit
+        - name: per_page
           in: query
           required: false
-          description: 最大取得件数（1〜40）
+          description: 1ページあたりの取得件数（1〜40）
           schema:
             type: integer
             minimum: 1
             maximum: 40
             default: 10
+        - name: page
+          in: query
+          required: false
+          description: ページ番号（1始まり）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
       responses:
         "200":
           description: 検索成功
@@ -159,7 +170,7 @@ components:
   schemas:
     BookSummary:
       type: object
-      required: [isbn, title, authors, published_date]
+      required: [isbn, title, authors, published_year]
       properties:
         isbn:
           type: string
@@ -170,12 +181,22 @@ components:
           example: "Fluent Python"
         authors:
           type: array
+          description: 著者・訳者の構造化リスト
           items:
-            type: string
-          example: ["Luciano Ramalho"]
+            $ref: "#/components/schemas/Author"
+          minItems: 1
+          example:
+            - name: "Luciano Ramalho"
+              role: "author"
+            - name: "豊沢聡"
+              role: "translator"
+        published_year:
+          type: integer
+          description: 出版年（外部APIの publishedDate から年を抽出）
+          example: 2022
         published_date:
           type: string
-          description: 出版日（YYYY-MM-DD または YYYY）
+          description: 出版日（YYYY-MM-DD。精度が年単位の場合は null）
           example: "2022-04-26"
         publisher:
           type: string
@@ -205,12 +226,24 @@ components:
 
     BookListResponse:
       type: object
-      required: [total, books]
+      required: [total, page, per_page, has_next, books]
       properties:
         total:
           type: integer
           description: ヒット総件数
           example: 42
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        per_page:
+          type: integer
+          description: 1ページあたりの件数
+          example: 10
+        has_next:
+          type: boolean
+          description: 次のページが存在するか
+          example: true
         books:
           type: array
           items:
@@ -219,7 +252,7 @@ components:
     BookInput:
       description: 書籍登録リクエスト
       type: object
-      required: [isbn, title, authors, published_date]
+      required: [isbn, title, authors, published_year]
       properties:
         isbn:
           type: string
@@ -231,11 +264,17 @@ components:
         authors:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/Author"
           minItems: 1
-          example: ["Luciano Ramalho"]
+          example:
+            - name: "Luciano Ramalho"
+              role: "author"
+        published_year:
+          type: integer
+          example: 2022
         published_date:
           type: string
+          description: 日単位の場合のみ指定（YYYY-MM-DD）
           example: "2022-04-26"
         publisher:
           type: string
@@ -257,6 +296,20 @@ components:
           type: string
           format: uri
           example: "https://example.com/books/9784873119328/thumbnail.jpg"
+
+    Author:
+      type: object
+      required: [name, role]
+      properties:
+        name:
+          type: string
+          description: 著者名
+          example: "Luciano Ramalho"
+        role:
+          type: string
+          description: 役割
+          enum: [author, translator, editor]
+          example: "author"
 
     ProblemDetail:
       description: RFC 7807 風のエラーレスポンス

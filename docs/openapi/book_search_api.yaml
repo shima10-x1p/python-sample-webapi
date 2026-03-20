@@ -36,6 +36,14 @@ paths:
             minimum: 1
             maximum: 40
             default: 10
+        - name: startIndex
+          in: query
+          required: false
+          description: 取得開始位置（0始まり）
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         "200":
           description: 検索成功
@@ -131,13 +139,16 @@ components:
           example: "Fluent Python"
         authors:
           type: array
+          description: 著者名の文字列リスト（"名 姓" 形式、訳者も混在する場合あり）
           items:
             type: string
-          example: ["Luciano Ramalho"]
+          example: ["Luciano Ramalho", "豊沢聡 訳"]
         publishedDate:
           type: string
-          description: 出版日（YYYY-MM-DD または YYYY）
-          example: "2022-04-26"
+          description: |
+            出版日。精度が年単位の場合は "YYYY"、
+            日単位の場合は "YYYY-MM-DD" で返される。
+          example: "2022"
         publisher:
           type: string
           example: "O'Reilly Media"
@@ -166,12 +177,16 @@ components:
 
     SearchResponse:
       type: object
-      required: [totalItems, items]
+      required: [totalItems, startIndex, items]
       properties:
         totalItems:
           type: integer
           description: ヒット総件数
           example: 42
+        startIndex:
+          type: integer
+          description: 今回の取得開始位置（0始まり）
+          example: 0
         items:
           type: array
           items:
