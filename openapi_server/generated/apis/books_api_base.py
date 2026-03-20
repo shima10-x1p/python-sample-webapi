@@ -5,10 +5,10 @@ from typing import ClassVar, Dict, List, Tuple  # noqa: F401
 from pydantic import Field, StrictStr, field_validator
 from typing import Optional
 from typing_extensions import Annotated
-from openapi_server.models.book_detail import BookDetail
-from openapi_server.models.book_input import BookInput
-from openapi_server.models.book_list_response import BookListResponse
-from openapi_server.models.problem_detail import ProblemDetail
+from generated.models.book_detail import BookDetail
+from generated.models.book_input import BookInput
+from generated.models.book_list_response import BookListResponse
+from generated.models.problem_detail import ProblemDetail
 
 
 class BaseBooksApi:

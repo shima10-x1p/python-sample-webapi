@@ -14,7 +14,7 @@
 
 from fastapi import FastAPI
 
-from openapi_server.apis.books_api import router as BooksApiRouter
+from generated.apis.books_api import router as BooksApiRouter
 
 app = FastAPI(
     title="Book Info API",

@@ -20,37 +20,26 @@ import json
 
 
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from typing_extensions import Annotated
-from openapi_server.models.author import Author
+from generated.models.author import Author
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
 
-class BookInput(BaseModel):
+class BookSummary(BaseModel):
     """
-    書籍登録リクエスト
+    BookSummary
     """ # noqa: E501
-    isbn: Annotated[str, Field(strict=True)]
+    isbn: StrictStr = Field(description="ISBN-13")
     title: StrictStr
-    authors: Annotated[List[Author], Field(min_length=1)]
-    published_year: StrictInt
-    published_date: Optional[StrictStr] = Field(default=None, description="日単位の場合のみ指定（YYYY-MM-DD）")
+    authors: Annotated[List[Author], Field(min_length=1)] = Field(description="著者・訳者の構造化リスト")
+    published_year: StrictInt = Field(description="出版年（外部APIの publishedDate から年を抽出）")
+    published_date: Optional[StrictStr] = Field(default=None, description="出版日（YYYY-MM-DD。精度が年単位の場合は null）")
     publisher: Optional[StrictStr] = None
-    summary: Optional[StrictStr] = Field(default=None, description="書籍の説明文（外部APIの `description` フィールドへマッピング）")
-    page_count: Optional[Annotated[int, Field(strict=True, ge=1)]] = None
-    categories: Optional[List[StrictStr]] = None
-    thumbnail_url: Optional[StrictStr] = None
-    __properties: ClassVar[List[str]] = ["isbn", "title", "authors", "published_year", "published_date", "publisher", "summary", "page_count", "categories", "thumbnail_url"]
-
-    @field_validator('isbn')
-    def isbn_validate_regular_expression(cls, value):
-        """Validates the regular expression"""
-        if not re.match(r"^\d{13}$", value):
-            raise ValueError(r"must validate the regular expression /^\d{13}$/")
-        return value
+    __properties: ClassVar[List[str]] = ["isbn", "title", "authors", "published_year", "published_date", "publisher"]
 
     model_config = {
         "populate_by_name": True,
@@ -70,7 +59,7 @@ class BookInput(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of BookInput from a JSON string"""
+        """Create an instance of BookSummary from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -100,7 +89,7 @@ class BookInput(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of BookInput from a dict"""
+        """Create an instance of BookSummary from a dict"""
         if obj is None:
             return None
 
@@ -113,11 +102,7 @@ class BookInput(BaseModel):
             "authors": [Author.from_dict(_item) for _item in obj.get("authors")] if obj.get("authors") is not None else None,
             "published_year": obj.get("published_year"),
             "published_date": obj.get("published_date"),
-            "publisher": obj.get("publisher"),
-            "summary": obj.get("summary"),
-            "page_count": obj.get("page_count"),
-            "categories": obj.get("categories"),
-            "thumbnail_url": obj.get("thumbnail_url")
+            "publisher": obj.get("publisher")
         })
         return _obj
 

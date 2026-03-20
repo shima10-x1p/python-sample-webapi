@@ -23,15 +23,15 @@ import json
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from typing_extensions import Annotated
-from openapi_server.models.author import Author
+from generated.models.author import Author
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
 
-class BookSummary(BaseModel):
+class BookDetail(BaseModel):
     """
-    BookSummary
+    BookDetail
     """ # noqa: E501
     isbn: StrictStr = Field(description="ISBN-13")
     title: StrictStr
@@ -39,7 +39,11 @@ class BookSummary(BaseModel):
     published_year: StrictInt = Field(description="出版年（外部APIの publishedDate から年を抽出）")
     published_date: Optional[StrictStr] = Field(default=None, description="出版日（YYYY-MM-DD。精度が年単位の場合は null）")
     publisher: Optional[StrictStr] = None
-    __properties: ClassVar[List[str]] = ["isbn", "title", "authors", "published_year", "published_date", "publisher"]
+    summary: Optional[StrictStr] = Field(default=None, description="書籍の説明文（外部APIの `description` フィールドをマッピング）")
+    page_count: Optional[StrictInt] = None
+    categories: Optional[List[StrictStr]] = None
+    thumbnail_url: Optional[StrictStr] = None
+    __properties: ClassVar[List[str]] = ["isbn", "title", "authors", "published_year", "published_date", "publisher", "summary", "page_count", "categories", "thumbnail_url"]
 
     model_config = {
         "populate_by_name": True,
@@ -59,7 +63,7 @@ class BookSummary(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Create an instance of BookSummary from a JSON string"""
+        """Create an instance of BookDetail from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -89,7 +93,7 @@ class BookSummary(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Dict) -> Self:
-        """Create an instance of BookSummary from a dict"""
+        """Create an instance of BookDetail from a dict"""
         if obj is None:
             return None
 
@@ -102,7 +106,11 @@ class BookSummary(BaseModel):
             "authors": [Author.from_dict(_item) for _item in obj.get("authors")] if obj.get("authors") is not None else None,
             "published_year": obj.get("published_year"),
             "published_date": obj.get("published_date"),
-            "publisher": obj.get("publisher")
+            "publisher": obj.get("publisher"),
+            "summary": obj.get("summary"),
+            "page_count": obj.get("page_count"),
+            "categories": obj.get("categories"),
+            "thumbnail_url": obj.get("thumbnail_url")
         })
         return _obj
 

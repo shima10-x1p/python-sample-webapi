@@ -22,7 +22,7 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 from typing import Any, ClassVar, Dict, List
-from openapi_server.models.book_summary import BookSummary
+from generated.models.book_summary import BookSummary
 try:
     from typing import Self
 except ImportError:

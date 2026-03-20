@@ -6,10 +6,10 @@ from fastapi.testclient import TestClient
 from pydantic import Field, StrictStr, field_validator  # noqa: F401
 from typing import Optional  # noqa: F401
 from typing_extensions import Annotated  # noqa: F401
-from openapi_server.models.book_detail import BookDetail  # noqa: F401
-from openapi_server.models.book_input import BookInput  # noqa: F401
-from openapi_server.models.book_list_response import BookListResponse  # noqa: F401
-from openapi_server.models.problem_detail import ProblemDetail  # noqa: F401
+from generated.models.book_detail import BookDetail  # noqa: F401
+from generated.models.book_input import BookInput  # noqa: F401
+from generated.models.book_list_response import BookListResponse  # noqa: F401
+from generated.models.problem_detail import ProblemDetail  # noqa: F401
 
 
 def test_search_books(client: TestClient):
