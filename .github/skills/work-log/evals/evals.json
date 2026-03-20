@@ -1,0 +1,93 @@
+{
+  "skill_name": "work-log",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "openapi_server/core/domain/ に Book ドメインエンティティクラスを追加しました。クラスは isbn, title, author, published_date フィールドを持ち、pyproject.toml の依存関係は変更なし。pytest を実行して 5件 passed を確認済みです。この作業のログを docs/work-logs/ に残してください。",
+      "expected_output": "docs/work-logs/YYYY-MM-DD_xxxxxxxx.md と同 .json が生成される。Markdownログにはファイル変更（openapi_server/core/domain/book.py の新規作成）の変更理由（what/why/impact）・テスト結果（5件 passed）が含まれている。JSONログも同内容で生成される。",
+      "assertions": [
+        {
+          "name": "markdown_log_created",
+          "description": "docs/work-logs/ ディレクトリに .md ファイルが1件以上作成されていること"
+        },
+        {
+          "name": "json_log_created",
+          "description": "docs/work-logs/ ディレクトリに .json ファイルが1件以上作成されていること"
+        },
+        {
+          "name": "change_reason_present",
+          "description": "Markdownログ内に 'what' 'why' 'impact' のいずれかのキーワードを含む変更理由が記載されていること"
+        },
+        {
+          "name": "test_results_present",
+          "description": "Markdownログ内に passed/failed/skipped のいずれかのテスト結果が記載されていること"
+        },
+        {
+          "name": "json_valid",
+          "description": "生成されたJSONファイルが有効なJSONであること（json.loads でパース可能）"
+        },
+        {
+          "name": "json_has_required_fields",
+          "description": "JSONログに 'session', 'trigger', 'files', 'outcome' の4フィールドが存在すること"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "tests/test_books_api.py の test_get_book_not_found が 404 ではなく 422 を返していたバグを修正しました。openapi_server/generated/apis/books_api.py の get_book メソッドで HTTPException の status_code を修正。テスト実行で全件 pass になりました。ログ取って",
+      "expected_output": "docs/work-logs/ に .md と .json が生成される。MarkdownにはAPIファイルの変更理由（バグ修正）・修正内容・テスト結果が記載される。JSONの files.modified に openapi_server/generated/apis/books_api.py が含まれる。",
+      "assertions": [
+        {
+          "name": "markdown_log_created",
+          "description": "docs/work-logs/ ディレクトリに .md ファイルが1件以上作成されていること"
+        },
+        {
+          "name": "json_log_created",
+          "description": "docs/work-logs/ ディレクトリに .json ファイルが1件以上作成されていること"
+        },
+        {
+          "name": "change_reason_present",
+          "description": "Markdownログ内に変更理由（バグ修正・修正内容など）が記載されていること"
+        },
+        {
+          "name": "json_valid",
+          "description": "生成されたJSONファイルが有効なJSONであること"
+        },
+        {
+          "name": "no_sensitive_data",
+          "description": "生成ファイル内にAPIキー・パスワード・トークンの文字列パターンが含まれていないこと"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "book_search_api.yaml に基づいて openapi-generator で検索APIのサーバースケルトンを生成し、openapi_server/generated/ 以下に配置しました。生成コマンドは `uvx --from openapi-generator-cli[jdk4py] openapi-generator-cli generate -g python-fastapi -i docs/openapi/book_search_api.yaml -o . --additional-properties=packageName=generated,sourceFolder=openapi_server` で exit code 0。pytest は実行していません。作業記録を残しておいてください。",
+      "expected_output": "docs/work-logs/ に .md と .json が生成される。Markdownには実行コマンド（openapi-generator-cli）・exit code 0・変更されたファイル群が記載される。テスト結果セクションは「テスト未実施」または省略。",
+      "assertions": [
+        {
+          "name": "markdown_log_created",
+          "description": "docs/work-logs/ ディレクトリに .md ファイルが1件以上作成されていること"
+        },
+        {
+          "name": "json_log_created",
+          "description": "docs/work-logs/ ディレクトリに .json ファイルが1件以上作成されていること"
+        },
+        {
+          "name": "command_recorded",
+          "description": "MarkdownまたはJSONに openapi-generator 関連のコマンドが記載されていること"
+        },
+        {
+          "name": "json_valid",
+          "description": "生成されたJSONファイルが有効なJSONであること"
+        },
+        {
+          "name": "json_has_required_fields",
+          "description": "JSONログに 'session', 'trigger', 'files', 'outcome' の4フィールドが存在すること"
+        }
+      ],
+      "files": []
+    }
+  ]
+}
